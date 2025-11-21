@@ -91,10 +91,15 @@ async def post_inference(data: Data):
     )
 
     # Run inference
-    preds = inference(model, X)
+    preds = inference(model, X)  # e.g., array([0]) or array([1])
 
-    # Convert numeric prediction(s) to label(s)
-    labels = apply_label(preds)
+    # Convert numeric prediction to string label explicitly
+    pred_value = int(preds[0])
 
-    # Single row → return single label
-    return {"result": labels[0]}
+    if pred_value == 0:
+        label_str = "<=50K"
+    else:
+        label_str = ">50K"
+
+    return {"result": label_str}
+
