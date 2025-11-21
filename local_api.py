@@ -1,18 +1,17 @@
+import requests
 import json
 
-import requests
+# ==== URLs ====
+URL = "http://127.0.0.1:8000"
+PREDICT_URL = f"{URL}/predict"
 
-# TODO: send a GET using the URL http://127.0.0.1:8000
-r = None # Your code here
+# ==== Test GET endpoint ====
+print("Testing GET / ...")
+r = requests.get(URL)
+print("GET response:", r.json())
 
-# TODO: print the status code
-# print()
-# TODO: print the welcome message
-# print()
-
-
-
-data = {
+# ==== Build sample payload ====
+payload = {
     "age": 37,
     "workclass": "Private",
     "fnlgt": 178356,
@@ -26,13 +25,11 @@ data = {
     "capital-gain": 0,
     "capital-loss": 0,
     "hours-per-week": 40,
-    "native-country": "United-States",
+    "native-country": "United-States"
 }
 
-# TODO: send a POST using the data above
-r = None # Your code here
-
-# TODO: print the status code
-# print()
-# TODO: print the result
-# print()
+# ==== Test POST /predict ====
+print("\nTesting POST /predict ...")
+headers = {"Content-Type": "application/json"}
+r = requests.post(PREDICT_URL, data=json.dumps(payload), headers=headers)
+print("POST response:", r.json())

@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 from ml.data import apply_label, process_data
 from ml.model import inference, load_model
 
-# DO NOT MODIFY
+
+# DO NOT MODIFY: input schema
 class Data(BaseModel):
     age: int = Field(..., example=37)
     workclass: str = Field(..., example="Private")
@@ -26,33 +27,47 @@ class Data(BaseModel):
     hours_per_week: int = Field(..., example=40, alias="hours-per-week")
     native_country: str = Field(..., example="United-States", alias="native-country")
 
-path = None # TODO: enter the path for the saved encoder 
-encoder = load_model(path)
 
-path = None # TODO: enter the path for the saved model 
-model = load_model(path)
+# ===== Load model artifacts at startup =====
+MODEL_DIR = "model"
+MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
+ENCODER_PATH = os.path.join(MODEL_DIR, "encoder.pkl")
+LB_PATH = os.path.join(MODEL_DIR, "lb.pkl")
 
-# TODO: create a RESTful API using FastAPI
-app = None # your code here
+model, encoder, lb = load_model(
+    model_path=MODEL_PATH,
+    encoder_path=ENCODER_PATH,
+    lb_path=LB_PATH,
+)
 
-# TODO: create a GET on the root giving a welcome message
+
+# ===== Create FastAPI app =====
+app = FastAPI(
+    title="Census Income Prediction API",
+    description="Predicts whether income is <=50K or >50K based on census data.",
+    version="1.0.0",
+)
+
+
+# ===== Root endpoint =====
 @app.get("/")
 async def get_root():
-    """ Say hello!"""
-    # your code here
-    pass
+    """Simple health check / welcome endpoint."""
+    return {"message": "Welcome to the census income prediction API."}
 
 
-# TODO: create a POST on a different path that does model inference
-@app.post("/data/")
+# ===== Prediction endpoint =====
+@app.post("/predict")
 async def post_inference(data: Data):
+    """
+    Run model inference on a single record.
+    """
     # DO NOT MODIFY: turn the Pydantic model into a dict.
     data_dict = data.dict()
     # DO NOT MODIFY: clean up the dict to turn it into a Pandas DataFrame.
-    # The data has names with hyphens and Python does not allow those as variable names.
-    # Here it uses the functionality of FastAPI/Pydantic/etc to deal with this.
-    data = {k.replace("_", "-"): [v] for k, v in data_dict.items()}
-    data = pd.DataFrame.from_dict(data)
+    # Field names use underscores, but original data uses hyphens.
+    data_clean = {k.replace("_", "-"): [v] for k, v in data_dict.items()}
+    df = pd.DataFrame.from_dict(data_clean)
 
     cat_features = [
         "workclass",
@@ -64,11 +79,22 @@ async def post_inference(data: Data):
         "sex",
         "native-country",
     ]
-    data_processed, _, _, _ = process_data(
-        # your code here
-        # use data as data input
-        # use training = False
-        # do not need to pass lb as input
+
+    # Process the incoming data using the existing encoder / lb
+    X, _, _, _ = process_data(
+        df,
+        categorical_features=cat_features,
+        label=None,
+        training=False,
+        encoder=encoder,
+        lb=lb,
     )
-    _inference = None # your code here to predict the result using data_processed
-    return {"result": apply_label(_inference)}
+
+    # Run inference
+    preds = inference(model, X)
+
+    # Convert numeric prediction(s) to label(s)
+    labels = apply_label(preds)
+
+    # Single row → return single label
+    return {"result": labels[0]}
