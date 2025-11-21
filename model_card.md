@@ -49,9 +49,9 @@ The model is trained on a cleaned version of the UCI Adult / Census Income datas
 
 On the held-out test set (20% split):
 
-- **Precision:** `PRECISION_HERE`
-- **Recall:** `RECALL_HERE`
-- **F1 (Fbeta, β=1):** `FBETA_HERE`
+- **Precision:** 0.7419
+- **Recall:** 0.6384
+- **F1 (Fbeta, β=1):** 0.6863
 
 These values are printed by `train_model.py` and reflect the model’s ability to distinguish between `<=50K` and `>50K` income levels.
 
